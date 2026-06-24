@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kakobuy Finds</title>
-    <!-- Font Awesome 6 (免费图标库) -->
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
-        /* ===== 全局重置 & 红黑主题（原样保留） ===== */
+        /* ===== 全局重置 & 红黑主题 ===== */
         * {
             margin: 0;
             padding: 0;
@@ -668,7 +668,7 @@
 </head>
 <body>
 
-    <!-- ===== 引导注册弹窗（添加了 id 便于JS操作） ===== -->
+    <!-- ===== 引导注册弹窗 ===== -->
     <div class="modal-overlay" id="registerModal">
         <div class="modal-card">
             <button class="close-btn" id="closeModalBtn" aria-label="关闭弹窗">
@@ -788,7 +788,7 @@
 
     <script>
         // ============================================================
-        // 1. 博主配置映射 (根据 URL 中的 ref 参数动态调整)
+        // 1. 博主配置映射（核心：在这里添加博主）
         // ============================================================
         const BLOGGER_CONFIG = {
             // 默认配置（当未提供 ref 或未匹配时使用）
@@ -799,20 +799,31 @@
                 discount1: '$15 off',
                 discount2: '20% off'
             },
-            // 示例：为不同 ref 定制（取消注释并修改即可）
-            // 'blogger_a': {
-            //   affcode: 'aff_a123',
-            //   coupon1: 'A_15',
-            //   coupon2: 'A_20',
-            //   discount1: '$15 off',
-            //   discount2: '20% off'
-            // },
-            // 'blogger_b': {
-            //   affcode: 'aff_b456',
-            //   coupon1: 'B_15',
-            //   coupon2: 'B_20',
-            //   discount1: '$15 off',
-            //   discount2: '20% off'
+            // ============================================================
+            // 👇 在这里添加你的博主配置
+            // 格式：'ref值': { affcode: '对应的affcode', coupon1: '优惠券1', coupon2: '优惠券2', discount1: '说明1', discount2: '说明2' }
+            // ============================================================
+            'blogger_a': {
+                affcode: 'blogger_a',
+                coupon1: 'a15',
+                coupon2: 'a20',
+                discount1: '$15 off',
+                discount2: '20% off'
+            },
+            'blogger_b': {
+                affcode: 'blogger_b',
+                coupon1: 'xxb15',
+                coupon2: 'xxb20',
+                discount1: '$15 off',
+                discount2: '20% off'
+            }
+            // 需要更多博主？按相同格式继续添加即可：
+            // 'blogger_c': {
+            //     affcode: 'blogger_c',
+            //     coupon1: '任意名字1',
+            //     coupon2: '任意名字2',
+            //     discount1: '$15 off',
+            //     discount2: '20% off'
             // }
         };
 
@@ -829,7 +840,7 @@
         const affcode = config.affcode;
 
         // ============================================================
-        // 3. 工具函数：替换 URL 中的 affcode 参数（保留其他参数）
+        // 3. 工具函数：替换 URL 中的 affcode 参数
         // ============================================================
         function replaceAffcode(url, newAffcode) {
             try {
@@ -837,12 +848,13 @@
                 urlObj.searchParams.set('affcode', newAffcode);
                 return urlObj.toString();
             } catch (e) {
-                return url; // 如果解析失败，返回原链接
+                // 如果URL解析失败（比如是相对路径），尝试直接替换字符串
+                return url.replace(/affcode=[^&]*/g, 'affcode=' + newAffcode);
             }
         }
 
         // ============================================================
-        // 4. 更新页面上的优惠券显示（横幅 + 弹窗）
+        // 4. 更新页面上的优惠券显示
         // ============================================================
         function updateCouponDisplay() {
             // 横幅
@@ -857,7 +869,7 @@
             document.getElementById('modalDiscount1').textContent = config.discount1;
             document.getElementById('modalDiscount2').textContent = config.discount2;
 
-            // 更新所有复制按钮的 data-copy 属性（使复制内容与新优惠券一致）
+            // 更新复制按钮的 data-copy 属性
             const copyBtns = document.querySelectorAll('.copy-btn, .copy-mini');
             if (copyBtns.length >= 2) {
                 copyBtns[0].dataset.copy = config.coupon1;
@@ -869,12 +881,11 @@
         // 5. 修改注册链接中的 affcode
         // ============================================================
         const registerBtn = document.getElementById('registerBtn');
-        // 原始链接（可修改为你的注册页）
         const baseRegisterUrl = 'https://ikako.vip/r/wptgu';
         registerBtn.href = replaceAffcode(baseRegisterUrl, affcode);
 
         // ============================================================
-        // 6. 商品数据加载与渲染（核心）
+        // 6. 商品数据加载与渲染
         // ============================================================
         const API_URL = 'https://api.sheetbest.com/sheets/00b0c402-9dba-493d-9b8e-3add2c84360d';
         const grid = document.getElementById('productGrid');
@@ -909,7 +920,6 @@
             }
 
             grid.innerHTML = filtered.map(p => {
-                // 替换商品链接中的 affcode
                 const productLink = replaceAffcode(p.link, affcode);
                 return `
                     <div class="product-card">
@@ -942,9 +952,8 @@
         }
 
         // ============================================================
-        // 7. 事件绑定（分类、搜索、价格、复制、弹窗等，与原功能一致）
+        // 7. 事件绑定
         // ============================================================
-        // 分类
         categoryBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 categoryBtns.forEach(b => b.classList.remove('active'));
@@ -954,13 +963,11 @@
             });
         });
 
-        // 搜索
         searchInput.addEventListener('input', function() {
             currentKeyword = this.value.trim();
             if (!isLoading) renderProducts();
         });
 
-        // 价格筛选
         applyPriceBtn.addEventListener('click', function() {
             const minVal = parseFloat(minPriceInput.value);
             const maxVal = parseFloat(maxPriceInput.value);
@@ -977,7 +984,7 @@
             if (!isLoading) renderProducts();
         });
 
-        // 复制功能（已自动适配新的优惠券名称）
+        // 复制功能
         document.querySelectorAll('.copy-btn, .copy-mini').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -991,7 +998,6 @@
                         setTimeout(() => { icon.className = original; }, 1500);
                     }
                 }).catch(() => {
-                    // 降级方案（兼容旧浏览器）
                     const textArea = document.createElement('textarea');
                     textArea.value = code;
                     document.body.appendChild(textArea);
@@ -1016,7 +1022,7 @@
             if (e.key === 'Escape' && !modal.classList.contains('hidden')) modal.classList.add('hidden');
         });
 
-        // 购买指南 & TikTok 占位
+        // 购买指南 & TikTok
         document.getElementById('guideBtn').addEventListener('click', (e) => {
             e.preventDefault();
             alert('📖 购买指南链接待配置，请联系管理员设置。');
@@ -1027,7 +1033,7 @@
         });
 
         // ============================================================
-        // 8. 实时在线人数（模拟）
+        // 8. 实时在线人数
         // ============================================================
         function updateOnlineCount() {
             document.getElementById('onlineCount').textContent = Math.floor(80 + Math.random() * 100);
@@ -1036,7 +1042,7 @@
         setInterval(updateOnlineCount, 30000);
 
         // ============================================================
-        // 9. 启动：先更新优惠券显示，再加载商品
+        // 9. 启动
         // ============================================================
         updateCouponDisplay();
         loadProducts();
